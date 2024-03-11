@@ -6,3 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tokio = "1.36.0"
+uuid = "1.7.0"
+serde = "1.0.197"
+anyhow = "1.0.80"
+
+[[bin]]
+name = "client"
+path = "src/bin/client/main.rs"
+
+[[bin]]
+name = "server"
+path = "src/bin/server/main.rs"
