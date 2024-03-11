@@ -23,8 +23,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Checking adapters...");
 
 
-    let bleManager = Manager::new().await.unwrap();
-    let adapters = bleManager.adapters().await?;
+    let ble_manager = Manager::new().await.unwrap();
+    let adapters = ble_manager.adapters().await?;
     let adapter = adapters.into_iter().nth(0).unwrap();
 
     println!("Starting scan...");
@@ -33,7 +33,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     for p in adapter.peripherals().await.unwrap() {
         let properties = p.properties().await.unwrap().unwrap();
-        println!("Device found: {} at {}", properties.local_name.unwrap(), properties.address.to_string())
+        let dev_name = properties.local_name.unwrap();
+        if (dev_name.eq(&args.device_name)) {
+            let dev_address = properties.address;
+            println!("Device found: {} at {}", dev_name, dev_address.to_string());
+            p.connect().await?;
+            p.discover_services().await?;
+            for s in p.services() {
+                println!("├─ Service {}", s.uuid.to_string());
+                for c in s.characteristics {
+                    println!("├── Characteristic {}", c.uuid);
+                }
+            }
+            break;
+        }
     }
 
     println!("Fin!");
