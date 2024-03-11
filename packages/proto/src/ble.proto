@@ -1,0 +1,57 @@
+syntax = "proto3";
+package lib;
+
+service BleProxy {
+  rpc DiscoverDevice(DiscoverRequest) returns (DeviceDescription) {}
+  rpc Read(ReadRequest) returns (ReadResponse) {}
+  rpc Write(WriteRequest) returns (WriteResponse) {}
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeEvent) {}
+}
+
+message DiscoverRequest {}
+
+message Characteristic {
+  string uuid = 1;
+  bool can_read = 2;
+  bool can_write = 3;
+  bool can_subscribe = 4;
+}
+
+message Service {
+  string uuid = 1;
+  repeated Characteristic characteristics = 2;
+}
+
+message DeviceDescription {
+  string uuid = 1;
+  string name = 5;
+  repeated Service services = 10;
+}
+
+message ReadRequest {
+  string characteristic_uuid = 1;
+}
+
+message ReadResponse {
+  bytes data = 1;
+}
+
+message WriteRequest {
+  string characteristic_uuid = 1;
+  bool ack = 2;
+  bytes data = 10;
+}
+message WriteResponse {
+  bool ack = 2;
+}
+
+message SubscribeRequest {
+  string characteristic_uuid = 1;
+  bool ack = 2;
+}
+
+message SubscribeEvent {
+  string characteristic_uuid = 1;
+  bool ack = 2;
+  bytes data = 10;
+}

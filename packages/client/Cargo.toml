@@ -1,0 +1,7 @@
+[package]
+name = "ble-over-ip-client"
+edition = "2021"
+version = "0.1.0"
+authors = ["Szymon Piechaczek szymon@piechaczek.it"]
+
+[dependencies]

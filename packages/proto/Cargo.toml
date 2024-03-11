@@ -1,0 +1,15 @@
+[package]
+name = "ble-over-ip-proto"
+edition = "2021"
+version = "0.1.0"
+authors = ["Szymon Piechaczek szymon@piechaczek.it"]
+
+[dependencies]
+prost = "0.12.3"
+tonic = "0.11.0"
+
+[build-dependencies]
+tonic-build = "0.11.0"
+
+[lib]
+path = "src/lib.rs"

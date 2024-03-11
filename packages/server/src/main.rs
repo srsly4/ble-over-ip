@@ -43,6 +43,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("├─ Service {}", s.uuid.to_string());
                 for c in s.characteristics {
                     println!("├── Characteristic {}", c.uuid);
+                    for d in c.descriptors {
+                        println!("├─── Descriptor {}", d.uuid);
+                    }
                 }
             }
             break;
