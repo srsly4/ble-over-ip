@@ -6,6 +6,7 @@ authors = ["Szymon Piechaczek szymon@piechaczek.it"]
 
 [dependencies]
 tokio = { version = "1.36.0", features = ["full"] }
+tokio-stream = "0.1.14"
 uuid = "1.7.0"
 anyhow = "1.0.80"
 clap = { version = "4.5.2", features = ["derive"] }
