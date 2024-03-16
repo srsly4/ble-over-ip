@@ -16,6 +16,8 @@ jobs:
             archive: tar.gz tar.xz tar.zst
           - target: x86_64-apple-darwin
             archive: zip
+    env:
+      SRC_DIR: packages/server
     steps:
       - uses: actions/checkout@master
       - name: Compile and release
