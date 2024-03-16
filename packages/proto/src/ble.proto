@@ -3,12 +3,19 @@ package lib;
 
 service BleProxy {
   rpc DiscoverDevice(DiscoverRequest) returns (DeviceDescription) {}
+  rpc ConnectToDevice(ConnectRequest) returns (ConnectResponse) {}
   rpc Read(ReadRequest) returns (ReadResponse) {}
   rpc Write(WriteRequest) returns (WriteResponse) {}
   rpc Subscribe(SubscribeRequest) returns (stream SubscribeEvent) {}
 }
 
 message DiscoverRequest {}
+
+message ConnectRequest {}
+message ConnectResponse {
+  bool is_ok = 1;
+  optional string error = 2;
+}
 
 message Characteristic {
   string uuid = 1;
