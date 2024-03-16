@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::time::Duration;
 use btleplug::api::{bleuuid::uuid_from_u16, Central, CharPropFlags, Manager as _, Peripheral as _, PeripheralProperties, ScanFilter, WriteType};
 use btleplug::platform::{Adapter, Manager, Peripheral};
@@ -13,20 +14,23 @@ use ble_over_ip_proto::ble_proxy_server::{BleProxy, BleProxyServer};
 use ble_over_ip_proto::{Characteristic, ConnectRequest, ConnectResponse, DeviceDescription, DiscoverRequest, ReadRequest, ReadResponse, Service, SubscribeEvent, SubscribeRequest, WriteRequest, WriteResponse};
 
 pub struct BleProxyImpl {
-    peripheral: Box<Peripheral>,
+    services: BTreeSet<btleplug::api::Service>,
+    properties: PeripheralProperties,
+    peripheral: Peripheral,
 }
 
 #[tonic::async_trait]
 impl BleProxy for BleProxyImpl {
     async fn discover_device(&self, _request: Request<DiscoverRequest>) -> Result<Response<DeviceDescription>, Status> {
+        println!("Discover device request!");
         let mut services: Vec<Service> = vec![];
 
-        let properties = self.peripheral.properties().await.unwrap().unwrap();
 
-        for s in self.peripheral.services() {
+        println!("Services count: {}", self.services.len());
+        for s in &self.services {
             println!("├─ Service {}", s.uuid.to_string());
             let mut characteristics: Vec<Characteristic> = vec![];
-            for c in s.characteristics {
+            for c in &s.characteristics {
                 println!("├── Characteristic {}", c.uuid);
                 characteristics.push(Characteristic {
                     uuid: c.uuid.to_string(),
@@ -44,8 +48,8 @@ impl BleProxy for BleProxyImpl {
 
         Ok(Response::new(DeviceDescription {
             services,
-            uuid: self.peripheral.id().to_string(),
-            name: properties.local_name.clone().unwrap_or("unknown".to_string()),
+            uuid: self.properties.address.to_string(),
+            name: self.properties.local_name.clone().unwrap_or("unknown".to_string()),
         }))
     }
 
@@ -128,19 +132,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn create_server(device: Peripheral, port: u16) -> Result<(), Box<dyn Error>> {
     device.connect().await?;
     device.discover_services().await?;
+
+    let services = device.services();
     for s in device.services() {
         println!("├─ Service {}", s.uuid.to_string());
         for c in s.characteristics {
             println!("├── Characteristic {}", c.uuid);
         }
     }
-    device.disconnect().await?;
 
+    let properties = device.properties().await?.unwrap();
+
+    device.disconnect().await?;
     let ble_proxy = BleProxyImpl {
-        peripheral: Box::new(device.clone()),
+        properties,
+        peripheral: device,
+        services,
     };
 
-    let addr = format!("[::1]:{}", port.to_string()).parse()?;
+    let addr = format!("0.0.0.0:{}", port.to_string()).parse()?;
 
     println!("Starting server at port {}", port.to_string());
 
