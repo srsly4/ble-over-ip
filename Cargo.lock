@@ -202,9 +202,12 @@ name = "ble-over-ip-client"
 version = "0.1.0"
 dependencies = [
  "ble-over-ip-proto",
+ "bluster",
  "clap",
+ "futures-channel",
  "tokio",
  "tonic",
+ "uuid 0.8.2",
 ]
 
 [[package]]
@@ -228,7 +231,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tonic",
- "uuid",
+ "uuid 1.7.0",
 ]
 
 [[package]]
@@ -255,7 +258,7 @@ dependencies = [
  "serde-xml-rs",
  "thiserror",
  "tokio",
- "uuid",
+ "uuid 1.7.0",
 ]
 
 [[package]]
@@ -265,6 +268,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4d1c659dbc82f0b8ca75606c91a371e763589b7f6acf36858eeed0c705afe367"
 dependencies = [
  "dbus",
+]
+
+[[package]]
+name = "bluster"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d09309a20bf3d026b7e858ae743061c46d634fe9a626d872ca36da90c475ea3"
+dependencies = [
+ "dbus",
+ "dbus-crossroads",
+ "dbus-tokio",
+ "dbus-tree",
+ "futures",
+ "log",
+ "objc",
+ "objc-foundation",
+ "objc_id",
+ "tokio",
+ "uuid 0.8.2",
 ]
 
 [[package]]
@@ -290,7 +312,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-stream",
- "uuid",
+ "uuid 1.7.0",
  "windows",
 ]
 
@@ -471,6 +493,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbus-crossroads"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a816e8ae3382c7b1bccfa6f2778346ee5b13f80e0eccf80cf8f2912af73995a"
+dependencies = [
+ "dbus",
+]
+
+[[package]]
 name = "dbus-tokio"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -479,6 +510,15 @@ dependencies = [
  "dbus",
  "libc",
  "tokio",
+]
+
+[[package]]
+name = "dbus-tree"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f456e698ae8e54575e19ddb1f9b7bce2298568524f215496b248eb9498b4f508"
+dependencies = [
+ "dbus",
 ]
 
 [[package]]
@@ -849,7 +889,7 @@ dependencies = [
  "log",
  "once_cell",
  "static_assertions",
- "uuid",
+ "uuid 1.7.0",
 ]
 
 [[package]]
@@ -959,6 +999,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "915b1b472bc21c53464d6c8461c9d3af805ba1ef837e1cac254428f4a77177b1"
 dependencies = [
  "malloc_buf",
+]
+
+[[package]]
+name = "objc-foundation"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1add1b659e36c9607c7aab864a76c7a4c2760cd0cd2e120f3fb8b952c7e22bf9"
+dependencies = [
+ "block",
+ "objc",
+ "objc_id",
+]
+
+[[package]]
+name = "objc_id"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c92d4ddb4bd7b50d730c215ff871754d0da6b2178849f8a2a2ab69712d0c073b"
+dependencies = [
+ "objc",
 ]
 
 [[package]]
@@ -1562,6 +1622,15 @@ name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "getrandom",
+]
 
 [[package]]
 name = "uuid"
