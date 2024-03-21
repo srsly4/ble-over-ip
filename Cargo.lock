@@ -204,6 +204,7 @@ dependencies = [
  "ble-over-ip-proto",
  "bluster",
  "clap",
+ "futures",
  "futures-channel",
  "tokio",
  "tonic",
