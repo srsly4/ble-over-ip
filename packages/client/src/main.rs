@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::{Display, Formatter};
 use std::process::exit;
 
 use bluster::gatt::characteristic::{Characteristic, Properties};
@@ -7,17 +8,17 @@ use bluster::gatt::event::Event;
 use bluster::gatt::service::Service;
 use bluster::Peripheral;
 use clap::Parser;
-use futures_channel::mpsc::{channel, Receiver, Sender};
 use futures::future::join_all;
-use futures::join;
+use futures::{join, SinkExt, StreamExt};
+use futures_channel::mpsc::{channel, Receiver, Sender};
 use tonic;
-use tonic::codegen::tokio_stream::StreamExt;
+use tonic::Status;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
+use ble_over_ip_proto::{DiscoverRequest, ReadRequest, SubscribeRequest, WriteRequest};
 use ble_over_ip_proto::ble_proxy_client::BleProxyClient;
 use ble_over_ip_proto::ble_proxy_server::BleProxy;
-use ble_over_ip_proto::{DiscoverRequest};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -26,30 +27,86 @@ struct ServerArgs {
     url: String,
 }
 
+#[derive(Debug, Clone)]
+struct CharacteristicProxyError {
+    status: Status,
+}
 
-struct CharacteristicHandler<'a, 'b> {
+impl Display for CharacteristicProxyError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "received invalid status from proxy: {}", self.status)
+    }
+}
+
+impl std::error::Error for CharacteristicProxyError {
+
+}
+
+struct CharacteristicHandler<'b> {
     characteristic: &'b ble_over_ip_proto::Characteristic,
-    server: &'a BleProxyClient<Channel>,
+    server: BleProxyClient<Channel>,
     sender: Sender<Event>,
     receiver: Receiver<Event>
 }
 
-impl<'a, 'b> CharacteristicHandler<'a, 'b> {
+impl<'b> CharacteristicHandler<'b> {
     async fn handle(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         while let Some(event) = self.receiver.next().await {
             // process request from client device
             match event {
-                Event::ReadRequest(read_request) => {
-
+                Event::ReadRequest(_read_request) => {
+                    let result = self.server.read(tonic::Request::new(ReadRequest {
+                        characteristic_uuid: self.characteristic.uuid.clone(),
+                    })).await;
+                    return if result.is_ok() {
+                        Ok(())
+                    } else {
+                        Err(Box::new(CharacteristicProxyError {
+                            status: result.err().unwrap(),
+                        }))
+                    }
                 }
                 Event::WriteRequest(write_request) => {
-
+                    let result = self.server.write(tonic::Request::new(WriteRequest {
+                        characteristic_uuid: self.characteristic.uuid.clone(),
+                        ack: !write_request.without_response,
+                        data: write_request.data,
+                    })).await;
+                    return if result.is_ok() {
+                        Ok(())
+                    } else {
+                        Err(Box::new(CharacteristicProxyError {
+                            status: result.err().unwrap(),
+                        }))                    }
                 }
-                Event::NotifySubscribe(notify_subscribe) => {
-
+                Event::NotifySubscribe(mut notify_subscribe) => {
+                    let result = self.server.subscribe(tonic::Request::new(SubscribeRequest {
+                        characteristic_uuid: self.characteristic.uuid.clone(),
+                        ack: false,
+                    })).await;
+                    return if result.is_ok() {
+                        let response = result.unwrap();
+                        let mut streaming = response.into_inner();
+                        while let Some(Ok(event)) = streaming.next().await {
+                            notify_subscribe.notification.send(event.data).await.unwrap()
+                        }
+                        Ok(())
+                    } else {
+                        Err(Box::new(CharacteristicProxyError {
+                            status: result.err().unwrap(),
+                        }))                           }
                 }
                 Event::NotifyUnsubscribe => {
-
+                    let result = self.server.unsubscribe(tonic::Request::new(SubscribeRequest {
+                        characteristic_uuid: self.characteristic.uuid.clone(),
+                        ack: false,
+                    })).await;
+                    return if result.is_ok() {
+                        Ok(())
+                    } else {
+                        Err(Box::new(CharacteristicProxyError {
+                            status: result.err().unwrap(),
+                        }))                           }
                 }
             }
 
@@ -82,7 +139,7 @@ impl<'a, 'b> CharacteristicHandler<'a, 'b> {
             } else { None },
         )
     }
-    fn new(characteristic: &'b ble_over_ip_proto::Characteristic, server: &'a BleProxyClient<Channel>) -> CharacteristicHandler<'a, 'b> {
+    fn new(characteristic: &'b ble_over_ip_proto::Characteristic, server: BleProxyClient<Channel>) -> CharacteristicHandler<'b> {
         let (sender, receiver) = channel(1);
         CharacteristicHandler {
             characteristic,
@@ -132,7 +189,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("├─ Service {}", s.uuid);
         let mut characteristics: HashSet<Characteristic> = HashSet::new();
         for c in &s.characteristics {
-            let handler = CharacteristicHandler::new(c, &client);
+            let handler = CharacteristicHandler::new(c, client.clone());
             println!("├── Characteristic {}", c.uuid);
             characteristics.insert(Characteristic::new(
                 c.uuid.parse().unwrap(),
